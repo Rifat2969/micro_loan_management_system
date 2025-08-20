@@ -1,3 +1,4 @@
+// lib/views/login_screen.dart
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
@@ -11,59 +12,101 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  String phone = '';
-  String password = '';
-  bool isLoading = false;
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
 
-  void loginUser() {
+  bool _loading = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['phone'] is String) {
+      _phoneController.text = args['phone'] as String;
+    }
+  }
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  String? _req(String? v) => (v == null || v.trim().isEmpty) ? 'Required' : null;
+
+  Future<void> _loginUser() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => isLoading = true);
+    setState(() => _loading = true);
 
-    Future.delayed(const Duration(seconds: 1), () {
-      final success = AuthService().login(phone, password);
-      setState(() => isLoading = false);
-      if (success) {
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid credentials!')));
-      }
-    });
+    try {
+      await AuthService.I.login(
+        // ✅ use singleton
+        phone: _phoneController.text.trim(),
+        password: _passwordController.text,
+      );
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/home');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Phone Number'),
-                keyboardType: TextInputType.phone,
-                onChanged: (val) => phone = val,
-                validator: (val) => val!.isEmpty ? 'Enter your phone' : null,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: const InputDecoration(labelText: 'Phone'),
+                    keyboardType: TextInputType.phone,
+                    validator: _req,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(labelText: 'Password'),
+                    obscureText: true,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Required';
+                      if (v.length < 3) return 'Minimum 3 characters';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton(
+                    onPressed: _loading ? null : _loginUser,
+                    child: _loading
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Login'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _loading ? null : () => Navigator.pushReplacementNamed(context, '/register'),
+                    child: const Text('No account? Register'),
+                  ),
+                ],
               ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Password'),
-                obscureText: true,
-                onChanged: (val) => password = val,
-                validator: (val) => val!.isEmpty ? 'Enter your password' : null,
-              ),
-              const SizedBox(height: 20),
-              isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
-                      onPressed: loginUser,
-                      child: const Text('Login'),
-                    ),
-              TextButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, '/register'),
-                child: const Text('No account? Register'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -7,16 +7,20 @@ import 'notification_screen.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
+  Future<void> _logout(BuildContext context) async {
+    await AuthService.I.logout();
+    if (context.mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = AuthService().currentUser;
+    final user = AuthService.I.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('MicroLoan App'),
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () {},
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -26,21 +30,31 @@ class HomeScreen extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const NotificationScreen()),
               );
             },
+            tooltip: 'Notifications',
           ),
-          IconButton(
+          PopupMenuButton<String>(
             icon: const Icon(Icons.account_circle),
-            onPressed: () {
-              // Profile page or dialog (to be implemented)
+            onSelected: (value) {
+              if (value == 'logout') _logout(context);
             },
+            itemBuilder: (ctx) => const [
+              PopupMenuItem(value: 'logout', child: Text('Logout')),
+            ],
           ),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(32.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
           children: [
-            Text('Welcome, ${user?.name ?? "User"}!', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Welcome, ${user?.name ?? "User"}!',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            if ((user?.phone ?? '').isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text('Phone: ${user!.phone}', style: Theme.of(context).textTheme.bodyMedium),
+            ],
             const SizedBox(height: 30),
             const Text('Your Balance:', style: TextStyle(fontSize: 18)),
             const SizedBox(height: 8),
@@ -49,7 +63,10 @@ class HomeScreen extends StatelessWidget {
             Center(
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanApplicationForm()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoanApplicationForm()),
+                  );
                 },
                 child: const Text('Apply for Loan'),
               ),
