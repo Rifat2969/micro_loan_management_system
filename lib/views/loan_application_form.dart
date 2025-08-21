@@ -43,7 +43,6 @@ class _LoanApplicationFormState extends State<LoanApplicationForm> {
 
   @override
   Widget build(BuildContext context) {
-    final user = AuthService.I.currentUser; // read-only display (if you want)
     final fields = [
       TextFormField(
         controller: _nameController,
@@ -107,6 +106,7 @@ class _LoanApplicationFormState extends State<LoanApplicationForm> {
         },
       ),
     ];
+
     return Scaffold(
       appBar: AppBar(title: const Text('Loan Application')),
       body: Padding(

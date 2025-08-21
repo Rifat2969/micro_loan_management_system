@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../models/user_create_request.dart';
-import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import 'register_success_screen.dart';
 
@@ -35,14 +33,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _loading = true);
 
     try {
-      final req = UserCreateRequest(
+      // Call AuthService with the expected named parameters
+      await AuthService.I.register(
         name: _name.text.trim(),
         phone: _phone.text.trim(),
+        password: _password.text, // mapped to password_hash in service
         address: _address.text.trim(),
-        passwordHash: _password.text,
       );
-
-      await AuthService.I.register(req);
 
       if (!mounted) return;
 
@@ -62,14 +59,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  Future<void> _ping() async {
-    final ok = await ApiClient.I.ping();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(ok ? 'Ping OK ✅' : 'Ping FAILED ❌')),
-    );
   }
 
   @override
@@ -133,11 +122,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   TextButton(
                     onPressed: _loading ? null : () => Navigator.pushReplacementNamed(context, '/login'),
                     child: const Text('Already have an account? Login'),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loading ? null : _ping,
-                    child: const Text('Ping API'),
                   ),
                 ],
               ),

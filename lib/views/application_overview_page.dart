@@ -1,6 +1,4 @@
 // lib/views/application_overview_page.dart
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
@@ -13,8 +11,8 @@ class LoanApplicationOverviewPage extends StatelessWidget {
   final String fatherName;
   final String address;
   final String reason;
-  final String amount; // parsed to int on submit
-  final String duration; // parsed to int on submit
+  final String amount; // string, will be parsed to int
+  final String duration; // string, will be parsed to int
 
   const LoanApplicationOverviewPage({
     super.key,
@@ -26,99 +24,64 @@ class LoanApplicationOverviewPage extends StatelessWidget {
   });
 
   Future<void> _submitToApi(BuildContext context) async {
-    final user = AuthService.I.currentUser;
-    final userId = user?.userId ?? 0;
-    if (userId == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login before submitting.')),
-      );
-      return;
-    }
-
-    final amountInt = int.tryParse(amount.trim()) ?? 0;
-    final durationInt = int.tryParse(duration.trim()) ?? 0;
-    if (amountInt <= 0 || durationInt <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Amount and Duration must be greater than zero.')),
-      );
-      return;
-    }
-
     _showLoading(context);
 
     try {
+      final user = AuthService.I.currentUser;
+      if (user == null) {
+        throw Exception("Please login first.");
+      }
+
       final payload = LoanApplication(
-        userId: userId, // ✅ auto from logged-in user
-        fatherName: fatherName.trim(),
-        address: address.trim(),
-        reason: reason.trim(),
-        amount: amountInt,
-        duration: durationInt,
-        nidDocument: '', // not used now
-        status: 'submitted',
+        userId: user.userId,
+        fatherName: fatherName,
+        address: address,
+        reason: reason,
+        amount: int.tryParse(amount) ?? 0,
+        duration: int.tryParse(duration) ?? 0,
+        nidDocument: "",
+        status: "submitted",
       );
 
       final res = await ApiClient.I.dio.post(
-        AuthService.LOANS_PATH, // '/loans/loans/'
+        '/loans/loans/',
         data: payload.toJson(),
-        options: Options(validateStatus: (s) => s != null && s >= 200 && s < 600),
+        options: Options(validateStatus: (s) => s != null && s < 600),
       );
 
-      if (Navigator.of(context).canPop()) Navigator.of(context).pop(); // close loader
+      Navigator.of(context).pop(); // close loading dialog
 
-      final sc = res.statusCode ?? 0;
-      if (sc == 200 || sc == 201 || sc == 204) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const ApplicationSubmittedPage()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Submit failed (HTTP $sc)')),
+          SnackBar(content: Text("Failed: HTTP ${res.statusCode}")),
         );
       }
     } catch (e) {
-      if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+      Navigator.of(context).pop(); // close loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network error: $e')),
+        SnackBar(content: Text("Error: $e")),
       );
     }
   }
 
-  void _confirmAndSubmit(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Confirm Submission'),
-        content: const Text('Are you sure you want to submit this application?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await _submitToApi(context);
-            },
-            child: const Text('Submit'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showLoading(BuildContext context) {
     showDialog(
-      context: context,
       barrierDismissible: false,
+      context: context,
       builder: (_) => const Dialog(
-        insetPadding: EdgeInsets.symmetric(horizontal: 100),
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: EdgeInsets.all(20),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2)),
-              SizedBox(width: 12),
-              Text('Submitting...'),
+              CircularProgressIndicator(strokeWidth: 2),
+              SizedBox(width: 16),
+              Text("Submitting..."),
             ],
           ),
         ),
@@ -126,55 +89,73 @@ class LoanApplicationOverviewPage extends StatelessWidget {
     );
   }
 
+  void _confirmAndSubmit(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Confirm Submission"),
+        content: const Text("Do you want to submit this loan application?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // close dialog
+              _submitToApi(context);
+            },
+            child: const Text("Submit"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = AuthService.I.currentUser; // for showing name only
-    final displayName = user?.name ?? 'User';
-
     return Scaffold(
       appBar: AppBar(title: const Text("Overview Application")),
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "To,\nThe Manager\nMicroLoan Bank\n\nSubject: Loan Application\n",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            const SizedBox(height: 8),
             Expanded(
               child: SingleChildScrollView(
                 child: Text(
-                  '''Sir,
+                  '''
+To,
+The Manager
+MicroLoan Bank
 
-I hope this letter finds you in good health and spirits.
+Subject: Loan Application
 
-I am $displayName, son/daughter of $fatherName, residing at $address.
-I am writing to apply for a loan of BDT $amount for a duration of $duration month(s).
-The reason for seeking this loan is as follows:
-$reason
+Sir,
 
-I sincerely hope that you will look into my request and grant me the required loan. If you need any further information, please let me know.
+I am applying for a loan.
 
-Thank you for your time and consideration.
+Father's Name: $fatherName
+Address: $address
+Reason: $reason
+Amount: $amount BDT
+Duration: $duration months
 
 Yours faithfully,
-
-$displayName
+${AuthService.I.currentUser?.name ?? "User"}
 ''',
                   style: const TextStyle(fontSize: 16, height: 1.5),
                 ),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 OutlinedButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text("Edit"),
                 ),
+                const Spacer(),
                 ElevatedButton(
                   onPressed: () => _confirmAndSubmit(context),
                   child: const Text("Submit"),
