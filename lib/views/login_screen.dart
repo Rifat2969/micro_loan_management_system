@@ -41,7 +41,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await AuthService.I.login(
-        // ✅ use singleton
         phone: _phoneController.text.trim(),
         password: _passwordController.text,
       );
@@ -60,7 +59,15 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(
+        title: const Text('Login'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, '/role');
+          },
+        ),
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),

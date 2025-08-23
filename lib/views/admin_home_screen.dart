@@ -53,11 +53,19 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin — Users'),
+        title: const Text("Users"),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: _loading ? null : _fetchUsers,
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loading ? null : _fetchUsers,
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/admin_login');
+            },
           ),
         ],
       ),
@@ -115,5 +123,3 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 }
-
-// lib/views/admin_user_loans_screen.dart

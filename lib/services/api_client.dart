@@ -9,7 +9,7 @@ class ApiClient {
   ApiClient._();
   static final ApiClient I = ApiClient._();
 
-  static const String _defaultBaseUrl = 'https://mattress-bacon-refrigerator-refuse.trycloudflare.com';
+  static const String _defaultBaseUrl = 'https://framed-drainage-klein-rapids.trycloudflare.com';
 
   late final Dio dio = Dio(
     BaseOptions(

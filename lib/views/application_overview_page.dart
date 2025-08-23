@@ -2,7 +2,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
-import '../models/loan_model.dart';
+import '../models/loan_application_model.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import 'application_submitted_page.dart';
@@ -11,8 +11,8 @@ class LoanApplicationOverviewPage extends StatelessWidget {
   final String fatherName;
   final String address;
   final String reason;
-  final String amount; // string, will be parsed to int
-  final String duration; // string, will be parsed to int
+  final String amount;
+  final String duration;
 
   const LoanApplicationOverviewPage({
     super.key,
@@ -39,7 +39,6 @@ class LoanApplicationOverviewPage extends StatelessWidget {
         reason: reason,
         amount: int.tryParse(amount) ?? 0,
         duration: int.tryParse(duration) ?? 0,
-        nidDocument: "",
         status: "submitted",
       );
 

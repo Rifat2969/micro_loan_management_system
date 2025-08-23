@@ -5,10 +5,10 @@ import 'services/api_client.dart';
 import 'views/RegisterScreen.dart';
 import 'views/admin_home_screen.dart';
 import 'views/admin_login_screen.dart';
-import 'views/home_screen.dart';
 import 'views/login_screen.dart';
 import 'views/register_success_screen.dart';
 import 'views/role_select_screen.dart';
+import 'views/user_home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

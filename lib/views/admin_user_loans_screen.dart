@@ -1,9 +1,38 @@
-// lib/views/admin_user_loans_screen.dart
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
-import '../models/loan_model.dart';
+import '../models/loan_application_model.dart';
 import '../services/api_client.dart';
+
+class LoanDecorator {
+  final LoanApplication loan;
+  final String userName;
+
+  LoanDecorator(this.loan, {required this.userName});
+
+  String get amountDisplay => "${loan.amount} BDT";
+  String get durationDisplay => "${loan.duration} months";
+  String get reasonDisplay => loan.reason ?? "No reason given";
+
+  String get statusDisplay => "Status: ${loan.status}";
+  String get userNameDisplay => "User Name: $userName";
+  String get fatherNameDisplay => "User's Father Name: ${loan.fatherName}";
+  String get addressDisplay => "User's Address: ${loan.address}";
+}
+
+class HighValueLoanDecorator extends LoanDecorator {
+  HighValueLoanDecorator(LoanApplication loan, {required String userName}) : super(loan, userName: userName);
+
+  bool get isHighValue => loan.amount >= 100000;
+
+  @override
+  String get amountDisplay {
+    if (isHighValue) {
+      return "🔥 HIGH VALUE: ${loan.amount} BDT";
+    }
+    return super.amountDisplay;
+  }
+}
 
 class AdminUserLoansScreen extends StatefulWidget {
   final int userId;
@@ -57,16 +86,6 @@ class _AdminUserLoansScreenState extends State<AdminUserLoansScreen> {
     }
   }
 
-  String _fmtDate(DateTime? dt) {
-    if (dt == null) return '-';
-    final y = dt.year.toString().padLeft(4, '0');
-    final m = dt.month.toString().padLeft(2, '0');
-    final d = dt.day.toString().padLeft(2, '0');
-    final hh = dt.hour.toString().padLeft(2, '0');
-    final mm = dt.minute.toString().padLeft(2, '0');
-    return '$y-$m-$d $hh:$mm';
-  }
-
   bool _canTransition(String status) {
     final s = status.toLowerCase().trim();
     return s == 'submitted' || s == 'pending';
@@ -82,7 +101,7 @@ class _AdminUserLoansScreenState extends State<AdminUserLoansScreen> {
 
     if (!_canTransition(l.status)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Cannot change status from \"${l.status}\".')),
+        SnackBar(content: Text('Cannot change status from "${l.status}".')),
       );
       return;
     }
@@ -99,7 +118,6 @@ class _AdminUserLoansScreenState extends State<AdminUserLoansScreen> {
         throw Exception('HTTP $sc: ${res.data}');
       }
 
-      // Optional: credit balance on approve if your backend supports it
       if (status == 'approved') {
         try {
           await ApiClient.I.dio.put(
@@ -126,40 +144,76 @@ class _AdminUserLoansScreenState extends State<AdminUserLoansScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('${widget.userName} — Applications')),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text('${widget.userName} — Applications'),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Text(_error!))
-              : ListView.separated(
-                  itemCount: _loans.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (_, i) {
-                    final l = _loans[i];
-                    final can = _canTransition(l.status);
-                    return ListTile(
-                      leading: const Icon(Icons.description),
-                      title: Text('Amount: ${l.amount} BDT • Duration: ${l.duration} mo'),
-                      subtitle: Text(
-                        'Status: ${l.status}\\nReason: ${l.reason}\\nSubmitted: ${_fmtDate(l.submittedAt)}',
-                      ),
-                      isThreeLine: true,
-                      trailing: Wrap(
-                        spacing: 8,
-                        children: [
-                          TextButton(
-                            onPressed: can ? () => _updateStatus(l, 'rejected') : null,
-                            child: const Text('Reject'),
+              : (_loans.isEmpty
+                  ? const Center(child: Text('No applications for loan'))
+                  : ListView.separated(
+                      itemCount: _loans.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (_, i) {
+                        final l = _loans[i];
+                        final decorated = HighValueLoanDecorator(l, userName: widget.userName);
+                        final can = _canTransition(l.status);
+
+                        return Card(
+                          elevation: 2,
+                          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Amount: ${decorated.amountDisplay}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 30,
+                                    color: Colors.blueAccent,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text('Duration: ${decorated.durationDisplay}',
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 6),
+                                Text('Reason for asking loan: ${decorated.reasonDisplay}',
+                                    style: const TextStyle(fontSize: 16)),
+                                const SizedBox(height: 6),
+                                Text(decorated.userNameDisplay, style: const TextStyle(fontSize: 16)),
+                                const SizedBox(height: 6),
+                                Text(decorated.fatherNameDisplay, style: const TextStyle(fontSize: 16)),
+                                const SizedBox(height: 6),
+                                Text(decorated.addressDisplay, style: const TextStyle(fontSize: 16)),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    TextButton(
+                                      onPressed: can ? () => _updateStatus(l, 'rejected') : null,
+                                      child: const Text('Reject'),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: can ? () => _updateStatus(l, 'approved') : null,
+                                      child: const Text('Approve'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                          ElevatedButton(
-                            onPressed: can ? () => _updateStatus(l, 'approved') : null,
-                            child: const Text('Approve'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    )),
     );
   }
 }

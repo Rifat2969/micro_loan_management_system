@@ -1,4 +1,4 @@
-// lib/views/home_screen.dart
+// lib/views/user_home_screen.dart
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
@@ -56,7 +56,17 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MicroLoan App'),
+        title: const Text(
+          'MicroLoan App',
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          tooltip: 'Refresh balance',
+          icon: _loading
+              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.refresh),
+          onPressed: _loading ? null : () => _refreshBalance(),
+        ),
         actions: [
           IconButton(
             tooltip: 'Notifications',
@@ -69,11 +79,13 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             },
           ),
           IconButton(
-            tooltip: 'Refresh balance',
-            icon: _loading
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.refresh),
-            onPressed: _loading ? null : () => _refreshBalance(),
+            tooltip: 'Logout',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService.I.logout(); // clear session
+              if (!mounted) return;
+              Navigator.pushNamedAndRemoveUntil(context, '/role', (route) => false);
+            },
           ),
         ],
       ),
