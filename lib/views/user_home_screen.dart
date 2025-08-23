@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
 import 'loan_application_form.dart';
-import 'notification_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -56,36 +55,27 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'MicroLoan App',
-        ),
-        centerTitle: true,
+        title: const Text('MicroLoan App'),
         leading: IconButton(
-          tooltip: 'Refresh balance',
-          icon: _loading
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.refresh),
-          onPressed: _loading ? null : () => _refreshBalance(),
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, '/role'); // goes back to role select
+          },
         ),
         actions: [
           IconButton(
             tooltip: 'Notifications',
             icon: const Icon(Icons.notifications),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const NotificationScreen()),
-              );
+              Navigator.pushNamed(context, '/notifications'); // your notification screen
             },
           ),
           IconButton(
-            tooltip: 'Logout',
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await AuthService.I.logout(); // clear session
-              if (!mounted) return;
-              Navigator.pushNamedAndRemoveUntil(context, '/role', (route) => false);
-            },
+            tooltip: 'Refresh balance',
+            icon: _loading
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.refresh),
+            onPressed: _loading ? null : () => _refreshBalance(),
           ),
         ],
       ),

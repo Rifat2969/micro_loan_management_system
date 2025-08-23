@@ -1,48 +1,51 @@
 class LoanApplication {
-  final int? loanId;
+  final int? loanId; // server assigns
   final int userId;
-  final int amount;
-  final int duration; // in months
-  final String status;
-  final String? reason;
   final String fatherName;
   final String address;
-  final DateTime? createdAt;
+  final String reason;
+  final int amount;
+  final int duration;
+  final String nidDocument;
+  final String status; // submitted/pending/approved/rejected
+  final DateTime? submittedAt;
 
   LoanApplication({
     this.loanId,
     required this.userId,
-    required this.amount,
-    required this.duration,
-    required this.status,
-    this.reason,
     required this.fatherName,
     required this.address,
-    this.createdAt,
+    required this.reason,
+    required this.amount,
+    required this.duration,
+    required this.nidDocument,
+    required this.status,
+    this.submittedAt,
   });
 
   factory LoanApplication.fromJson(Map<String, dynamic> j) => LoanApplication(
-        loanId: _asInt(j['loan_id']),
+        loanId: _asIntOrNull(j['loan_id']),
         userId: _asInt(j['user_id']),
-        amount: _asInt(j['amount']),
-        duration: _asInt(j['duration']),
-        status: (j['status'] ?? '').toString(),
-        reason: j['reason']?.toString(),
         fatherName: (j['father_name'] ?? '').toString(),
         address: (j['address'] ?? '').toString(),
-        createdAt: j['created_at'] == null ? null : DateTime.tryParse(j['created_at'].toString()),
+        reason: (j['reason'] ?? '').toString(),
+        amount: _asInt(j['amount']),
+        duration: _asInt(j['duration']),
+        nidDocument: (j['nid_document'] ?? '').toString(),
+        status: (j['status'] ?? '').toString(),
+        submittedAt: j['submitted_at'] == null ? null : DateTime.tryParse(j['submitted_at'].toString()),
       );
 
+  /// POST /loans/loans/  (server will set loan_id & submitted_at)
   Map<String, dynamic> toJson() => {
-        'loan_id': loanId,
         'user_id': userId,
-        'amount': amount,
-        'duration': duration,
-        'status': status,
-        'reason': reason,
         'father_name': fatherName,
         'address': address,
-        'created_at': createdAt?.toIso8601String(),
+        'reason': reason,
+        'amount': amount,
+        'duration': duration,
+        'nid_document': nidDocument,
+        'status': status,
       };
 }
 
@@ -51,4 +54,11 @@ int _asInt(dynamic v) {
   if (v is int) return v;
   if (v is double) return v.toInt();
   return int.tryParse(v.toString()) ?? 0;
+}
+
+int? _asIntOrNull(dynamic v) {
+  if (v == null) return null;
+  if (v is int) return v;
+  if (v is double) return v.toInt();
+  return int.tryParse(v.toString());
 }

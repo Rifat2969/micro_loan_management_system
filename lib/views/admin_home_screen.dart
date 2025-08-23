@@ -53,18 +53,17 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Users"),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.refresh),
-          onPressed: _loading ? null : _fetchUsers,
-        ),
+        title: const Text('Users'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loading ? null : _fetchUsers,
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Logout',
             onPressed: () {
-              Navigator.pushReplacementNamed(context, '/admin_login');
+              Navigator.pushReplacementNamed(context, '/admin_login'); // logout to admin login
             },
           ),
         ],

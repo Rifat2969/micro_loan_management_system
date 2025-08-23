@@ -51,13 +51,13 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Login'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pushReplacementNamed(context, '/role');
+            Navigator.pushReplacementNamed(context, '/role'); // back to role select
           },
         ),
+        title: const Text('Admin Login'),
       ),
       body: Center(
         child: ConstrainedBox(

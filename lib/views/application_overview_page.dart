@@ -39,6 +39,7 @@ class LoanApplicationOverviewPage extends StatelessWidget {
         reason: reason,
         amount: int.tryParse(amount) ?? 0,
         duration: int.tryParse(duration) ?? 0,
+        nidDocument: "",
         status: "submitted",
       );
 
